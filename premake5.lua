@@ -87,6 +87,7 @@ workspace "MTASA"
 
 	filter "system:windows"
 		toolset "v141"
+		systemversion "latest"
 		staticruntime "On"
 		defines { "WIN32", "_WIN32", "_WIN32_WINNT=0x601", "_MSC_PLATFORM_TOOLSET=$(PlatformToolsetVersion)" }
 		includedirs {
