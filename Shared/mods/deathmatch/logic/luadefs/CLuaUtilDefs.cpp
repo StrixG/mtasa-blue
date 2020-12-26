@@ -423,6 +423,7 @@ int CLuaUtilDefs::toJSON(lua_State* luaVM)
         int jsonFlags = 0;
         // Read the argument
         CLuaArguments JSON;
+
         JSON.ReadArgument(luaVM, 1);
         argStream.Skip(1);
 
@@ -435,11 +436,14 @@ int CLuaUtilDefs::toJSON(lua_State* luaVM)
         if (jsonPrettyType != JSONPRETTY_NONE)
             jsonFlags |= jsonPrettyType;
 
+        bool bArray;
+        argStream.ReadBool(bArray, false);
+
         if (!argStream.HasErrors())
         {
             // Convert it to a JSON string
             std::string strJSON;
-            if (JSON.WriteToJSONString(strJSON, false, jsonFlags))
+            if (JSON.WriteToJSONString(strJSON, false, jsonFlags, bArray))
             {
                 // Return the JSON string
                 lua_pushstring(luaVM, strJSON.c_str());
@@ -461,18 +465,25 @@ int CLuaUtilDefs::fromJSON(lua_State* luaVM)
 {
     // Got a string argument?
     SString          strJson = "";
+    bool             bMultipleResults;
     CScriptArgReader argStream(luaVM);
     argStream.ReadString(strJson);
+    argStream.ReadBool(bMultipleResults, true);
 
     if (!argStream.HasErrors())
     {
         // Read it into lua arguments
         CLuaArguments Converted;
-        if (Converted.ReadFromJSONString(strJson))
+        if (Converted.ReadFromJSONString(strJson, !bMultipleResults))
         {
             // Return it as data
-            Converted.PushArguments(luaVM);
-            return Converted.Count();
+            if (bMultipleResults)
+            {
+                Converted.PushArguments(luaVM);
+                return Converted.Count();
+            }
+            Converted.PushAsTable(luaVM);
+            return 1;
         }
     }
     else

@@ -685,7 +685,7 @@ json_object* CLuaArguments::WriteTableToJSONObject(bool bSerialize, CFastHashMap
     }
 }
 
-bool CLuaArguments::ReadFromJSONString(const char* szJSON)
+bool CLuaArguments::ReadFromJSONString(const char* szJSON, bool bArray)
 {
     // Fast isJSON check: Check first non-white space character is '[' or '{'
     for (const char* ptr = szJSON; true;)
@@ -706,15 +706,21 @@ bool CLuaArguments::ReadFromJSONString(const char* szJSON)
             bool bSuccess = true;
 
             std::vector<CLuaArguments*> knownTables;
-
-            for (uint i = 0; i < json_object_array_length(object); i++)
+            if (bArray)
             {
-                json_object*  arrayObject = json_object_array_get_idx(object, i);
-                CLuaArgument* pArgument = new CLuaArgument();
-                bSuccess = pArgument->ReadFromJSONObject(arrayObject, &knownTables);
-                m_Arguments.push_back(pArgument);            // then the value
-                if (!bSuccess)
-                    break;
+                ReadFromJSONArray(object, &knownTables);
+            }
+            else
+            {
+                for (uint i = 0; i < json_object_array_length(object); i++)
+                {
+                    json_object*  arrayObject = json_object_array_get_idx(object, i);
+                    CLuaArgument* pArgument = new CLuaArgument();
+                    bSuccess = pArgument->ReadFromJSONObject(arrayObject, &knownTables);
+                    m_Arguments.push_back(pArgument);            // then the value
+                    if (!bSuccess)
+                        break;
+                }
             }
             json_object_put(object);            // dereference
             return bSuccess;
